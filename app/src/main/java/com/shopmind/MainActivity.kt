@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.shopmind.screen.authentication.LoginScreen
 import com.shopmind.ui.theme.ShopMindTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,22 +27,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShopMindTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    LoginScreen(innerPadding)
                 }
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }
 
 @Preview(showBackground = true)
@@ -56,11 +46,7 @@ fun GreetingPreview() {
                     .padding(innerPadding)
                     .background(Color.Blue)
             ) {
-                Text("Andssssroid", modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
-                    textAlign = TextAlign.Center
-                )
+                LoginScreen(innerPadding)
             }
         }
     }
