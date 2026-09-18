@@ -18,10 +18,11 @@ data class ProductUiState(
     val error: String? = null
 ) {
     val totalItems: Int get() = cart.values.sum()
-    val totalPrice: Double get() = cart.entries.sumOf { entry ->
-        val product = products.find { it.id == entry.key }
-        (product?.price ?: 0.0) * entry.value
-    }
+    val totalPrice: Double
+        get() = cart.entries.sumOf { entry ->
+            val product = products.find { it.id == entry.key }
+            (product?.price ?: 0.0) * entry.value
+        }
 }
 
 class ProductViewModel(
@@ -41,8 +42,13 @@ class ProductViewModel(
 
             val categoriesResult = productRepository.getCategories()
             categoriesResult.onSuccess { categories ->
+                val categoryList: MutableList<String> = mutableListOf()
+                categories.forEach {
+                    categoryList.add(it.name)
+                }
+
                 _uiState.value = _uiState.value.copy(
-                    categories = listOf("All") + categories
+                    categories = listOf("All") + categoryList
                 )
             }
 

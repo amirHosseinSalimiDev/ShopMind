@@ -1,5 +1,6 @@
 package com.shopmind.data.remote.api
 
+import com.shopmind.data.remote.dto.CategoryDto
 import com.shopmind.data.remote.dto.ProductDto
 import com.shopmind.data.remote.dto.ProductListResponseDto
 import retrofit2.http.GET
@@ -25,7 +26,7 @@ interface ProductApiService {
     ): ProductListResponseDto
 
     @GET("products/categories")
-    suspend fun getCategories(): List<String>
+    suspend fun getCategories(): List<CategoryDto>
 
     @GET("products/category/{category}")
     suspend fun getProductsByCategory(

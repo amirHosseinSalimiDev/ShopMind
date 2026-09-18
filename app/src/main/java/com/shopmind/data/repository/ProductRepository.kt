@@ -1,7 +1,7 @@
 package com.shopmind.data.repository
 
 import com.shopmind.data.remote.api.ProductApiService
-import com.shopmind.data.remote.dto.ProductDto
+import com.shopmind.data.remote.dto.CategoryDto
 import com.shopmind.data.remote.dto.ProductListResponseDto
 
 class ProductRepository(
@@ -15,7 +15,7 @@ class ProductRepository(
         }
     }
 
-    suspend fun getCategories(): Result<List<String>> {
+    suspend fun getCategories(): Result<List<CategoryDto>> {
         return try {
             Result.success(productApiService.getCategories())
         } catch (e: Exception) {
