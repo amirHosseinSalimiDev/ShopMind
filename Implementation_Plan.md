@@ -79,7 +79,7 @@ This structure must allow the application to determine exactly which products ea
 
 ---
 
-# Phase 2 — Product API & Retrofit Configuration
+# Phase 2 — Product API & Retrofit Configuration (Done)
 
 Use **Retrofit** to communicate with the DummyJSON API.
 
