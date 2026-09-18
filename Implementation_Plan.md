@@ -1,4 +1,4 @@
-# Phase 1 — Database Design
+# Phase 1 — Database Design (Done)
 
 Design the Room database around these entities:
 
