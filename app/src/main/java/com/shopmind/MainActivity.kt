@@ -3,31 +3,56 @@ package com.shopmind
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.shopmind.screen.authentication.LoginScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shopmind.screen.App
 import com.shopmind.ui.theme.ShopMindTheme
+import com.shopmind.viewmodel.MainViewModel
+import com.shopmind.viewmodel.StartupState
 
 class MainActivity : ComponentActivity() {
+
+    private val startupViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        val splashScreen = installSplashScreen()
+
+        splashScreen.setKeepOnScreenCondition {
+            startupViewModel.state.value is StartupState.Loading
+        }
+
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
             ShopMindTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(innerPadding)
+
+                val startupState by startupViewModel.state.collectAsStateWithLifecycle()
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+
+                    when (val state = startupState) {
+                        StartupState.Loading -> {
+                            // This shouldn't normally be visible because
+                            // SplashScreen is keeping the launch screen up.
+                        }
+
+                        else -> {
+                            App(
+                                paddingValues = innerPadding,
+                                startupState = state
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -38,16 +63,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     ShopMindTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(innerPadding)
-                    .background(Color.Blue)
-            ) {
-                LoginScreen(innerPadding)
-            }
+        Scaffold(
+            modifier = Modifier.fillMaxSize()
+        ) { innerPadding ->
+
+            App(
+                paddingValues = innerPadding,
+                startupState = StartupState.Unauthenticated
+            )
         }
     }
 }

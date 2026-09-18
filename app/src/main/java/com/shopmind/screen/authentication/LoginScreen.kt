@@ -42,13 +42,14 @@ import com.shopmind.ui.theme.indigo600
 
 
 @Composable
-fun LoginScreen(paddingValues: PaddingValues) {
+fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
     var phoneNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.padding(paddingValues)
+        modifier = Modifier
+            .padding(paddingValues)
             .fillMaxSize()
             .background(color = Color(0xFFF8F9FA))
             .padding(24.dp),
@@ -153,7 +154,7 @@ fun LoginScreen(paddingValues: PaddingValues) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Don't have an account? ", color = Color.Gray)
-            TextButton(onClick = { /* Handle Sign Up */ }) {
+            TextButton(onClick = { onSignUpClick.invoke() }) {
                 Text(text = "Sign Up", color = indigo600, fontWeight = FontWeight.Bold)
             }
         }
@@ -164,5 +165,5 @@ fun LoginScreen(paddingValues: PaddingValues) {
 @Preview
 @Composable
 fun LoginScreenPreview(paddingValues: PaddingValues = PaddingValues()) {
-    LoginScreen(paddingValues)
+    LoginScreen(paddingValues, onSignUpClick = {})
 }
