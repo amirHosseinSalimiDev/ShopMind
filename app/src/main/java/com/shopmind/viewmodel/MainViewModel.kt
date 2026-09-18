@@ -2,6 +2,7 @@ package com.shopmind.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shopmind.data.repository.AuthRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,7 @@ sealed interface StartupState {
     data object Unauthenticated : StartupState
 }
 
-class MainViewModel: ViewModel() {
+class MainViewModel(private val authRepository: AuthRepository): ViewModel() {
     private val _state = MutableStateFlow<StartupState>(StartupState.Loading)
     val state: StateFlow<StartupState> = _state.asStateFlow()
 
@@ -28,22 +29,18 @@ class MainViewModel: ViewModel() {
 
     private fun initialize() {
         viewModelScope.launch {
-            // Load DataStore/session/etc.
-            val isAuthenticated = checkAuthentication()
-
-            delay(2000.milliseconds)
-            
-            _state.value =
-                if (isAuthenticated) {
-                    StartupState.Authenticated
-                } else {
-                    StartupState.Unauthenticated
+            authRepository.isLoggedIn.collect { isAuthenticated ->
+                if (_state.value == StartupState.Loading) {
+                    delay(1000.milliseconds)
                 }
-        }
-    }
 
-    private suspend fun checkAuthentication(): Boolean {
-        // TODO
-        return false
+                _state.value =
+                    if (isAuthenticated) {
+                        StartupState.Authenticated
+                    } else {
+                        StartupState.Unauthenticated
+                    }
+            }
+        }
     }
 }

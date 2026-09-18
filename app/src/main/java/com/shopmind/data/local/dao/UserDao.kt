@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUser(user: UserEntity)
+    suspend fun insertUser(user: UserEntity): Long
 
     @Query("SELECT * FROM users WHERE phoneNumber = :phoneNumber LIMIT 1")
     suspend fun getUserByPhoneNumber(phoneNumber: String): UserEntity?

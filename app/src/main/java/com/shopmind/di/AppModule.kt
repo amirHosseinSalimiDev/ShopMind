@@ -24,7 +24,7 @@ val appModule = module {
     single { get<AppDatabase>().orderDao() }
 
     single { UserDataStore(androidContext()) }
-    single { AuthRepository(get()) }
+    single { AuthRepository(get(), get()) }
 
     viewModel { MainViewModel(get()) }
     viewModel { AuthViewModel(get()) }

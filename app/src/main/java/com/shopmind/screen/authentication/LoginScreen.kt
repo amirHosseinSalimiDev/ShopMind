@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -30,8 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -42,16 +50,30 @@ import com.shopmind.ui.theme.indigo600
 
 
 @Composable
-fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
+fun LoginScreen(
+    paddingValues: PaddingValues,
+    onSignUpClick: () -> Unit,
+    onLogin: (String, String) -> Unit
+) {
     var phoneNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val scrollState = rememberScrollState()
+
+    val passwordFocusRequester = remember {
+        FocusRequester()
+    }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()
             .background(color = Color(0xFFF8F9FA))
+            .imePadding()
+            .verticalScroll(scrollState)
             .padding(24.dp),
         horizontalAlignment = Alignment.Start
     ) {
@@ -86,7 +108,9 @@ fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
-            placeholder = { Text("e.g. 555-0199", color = Color.LightGray) },
+            placeholder = {
+                Text("e.g. 555-0199", color = Color.LightGray)
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -95,7 +119,15 @@ fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Phone,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    passwordFocusRequester.requestFocus()
+                }
+            )
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -112,17 +144,35 @@ fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Enter password", color = Color.LightGray) },
-            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Enter password", color = Color.LightGray)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(passwordFocusRequester),
             shape = RoundedCornerShape(12.dp),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
             trailingIcon = {
-                val image = if (passwordVisible)
+                val image = if (passwordVisible) {
                     Icons.Filled.Visibility
-                else Icons.Filled.VisibilityOff
+                } else {
+                    Icons.Filled.VisibilityOff
+                }
 
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                IconButton(
+                    onClick = {
+                        passwordVisible = !passwordVisible
+                    }
+                ) {
+                    Icon(
+                        imageVector = image,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
                 }
             },
             colors = OutlinedTextFieldDefaults.colors(
@@ -130,32 +180,64 @@ fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
                 unfocusedBorderColor = Color(0xFFE5E7EB),
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide()
+
+                    if (phoneNumber.isNotEmpty() && password.isNotEmpty()) {
+                        onLogin(phoneNumber, password)
+                    }
+                }
             )
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = { /* Handle login */ },
+            onClick = {
+                onLogin(phoneNumber, password)
+            },
+            enabled = phoneNumber.isNotEmpty() && password.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = indigo600)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = indigo600
+            )
         ) {
-            Text(text = "Login", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Login",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(48.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Don't have an account? ", color = Color.Gray)
-            TextButton(onClick = { onSignUpClick.invoke() }) {
-                Text(text = "Sign Up", color = indigo600, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Don't have an account? ",
+                color = Color.Gray
+            )
+
+            TextButton(
+                onClick = onSignUpClick
+            ) {
+                Text(
+                    text = "Sign Up",
+                    color = indigo600,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -165,5 +247,5 @@ fun LoginScreen(paddingValues: PaddingValues, onSignUpClick: () -> Unit) {
 @Preview
 @Composable
 fun LoginScreenPreview(paddingValues: PaddingValues = PaddingValues()) {
-    LoginScreen(paddingValues, onSignUpClick = {})
+    LoginScreen(paddingValues, onSignUpClick = {}, onLogin = { _, _ -> })
 }
