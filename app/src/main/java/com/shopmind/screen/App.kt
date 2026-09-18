@@ -3,7 +3,6 @@ package com.shopmind.screen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -28,7 +27,7 @@ fun App(
     }
 
     NavHost(
-        modifier = Modifier.padding(paddingValues),
+        modifier = Modifier,
         navController = navController,
         startDestination = startDestination,
         enterTransition = {

@@ -5,8 +5,10 @@ import com.shopmind.data.local.database.AppDatabase
 import com.shopmind.data.local.datastore.UserDataStore
 import com.shopmind.data.remote.api.ProductApiService
 import com.shopmind.data.repository.AuthRepository
+import com.shopmind.data.repository.ProductRepository
 import com.shopmind.viewmodel.AuthViewModel
 import com.shopmind.viewmodel.MainViewModel
+import com.shopmind.viewmodel.ProductViewModel
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -66,7 +68,9 @@ val appModule = module {
     // DataStore & Repositories
     single { UserDataStore(androidContext()) }
     single { AuthRepository(get(), get()) }
+    single { ProductRepository(get()) }
 
     viewModel { MainViewModel(get()) }
     viewModel { AuthViewModel(get()) }
+    viewModel { ProductViewModel(get()) }
 }

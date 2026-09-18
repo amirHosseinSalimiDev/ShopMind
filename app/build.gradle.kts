@@ -65,6 +65,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
+    // Coil
+    implementation(libs.coil.compose)
+
     // Koin
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
