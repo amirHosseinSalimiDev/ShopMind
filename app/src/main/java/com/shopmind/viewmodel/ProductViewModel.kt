@@ -3,6 +3,7 @@ package com.shopmind.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shopmind.data.remote.dto.ProductDto
+import com.shopmind.data.repository.AuthRepository
 import com.shopmind.data.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ data class ProductUiState(
 }
 
 class ProductViewModel(
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductUiState())
@@ -106,5 +108,11 @@ class ProductViewModel(
 
     fun clearCart() {
         _uiState.value = _uiState.value.copy(cart = emptyMap())
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+        }
     }
 }
