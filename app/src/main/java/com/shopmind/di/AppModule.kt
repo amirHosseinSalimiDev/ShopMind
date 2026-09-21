@@ -5,6 +5,7 @@ import com.shopmind.data.local.database.AppDatabase
 import com.shopmind.data.local.datastore.UserDataStore
 import com.shopmind.data.remote.api.ProductApiService
 import com.shopmind.data.repository.AuthRepository
+import com.shopmind.data.repository.OrderRepository
 import com.shopmind.data.repository.ProductRepository
 import com.shopmind.viewmodel.AuthViewModel
 import com.shopmind.viewmodel.MainViewModel
@@ -68,9 +69,10 @@ val appModule = module {
     // DataStore & Repositories
     single { UserDataStore(androidContext()) }
     single { AuthRepository(get(), get()) }
-    single { ProductRepository(get()) }
+    single { ProductRepository(get(), get()) }
+    single { OrderRepository(get()) }
 
     viewModel { MainViewModel(get()) }
     viewModel { AuthViewModel(get()) }
-    viewModel { ProductViewModel(get(), get()) }
+    viewModel { ProductViewModel(get(), get(), get()) }
 }

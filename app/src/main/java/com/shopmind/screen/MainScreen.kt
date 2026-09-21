@@ -28,12 +28,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -56,6 +58,7 @@ import coil.compose.AsyncImage
 import com.shopmind.data.remote.dto.ProductDto
 import com.shopmind.ui.theme.indigo600
 import com.shopmind.viewmodel.ProductViewModel
+import com.shopmind.viewmodel.PurchaseStage
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
@@ -66,85 +69,105 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        bottomBar = {
-            PurchaseBottomBar(
-                totalItems = uiState.totalItems,
-                totalPrice = uiState.totalPrice,
-                onPurchaseClick = { viewModel.clearCart() }
-            )
-        }
-    ) { innerPadding ->
-        Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "ShopMind",
-                    color = indigo600,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
+                .padding(paddingValues),
+            bottomBar = {
+                PurchaseBottomBar(
+                    totalItems = uiState.totalItems,
+                    totalPrice = uiState.totalPrice,
+                    onPurchaseClick = { viewModel.startPurchaseFlow() }
                 )
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp)
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                TextButton(
-                    onClick = {
-                        viewModel.logout()
-                    },
-                    contentPadding = PaddingValues(0.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Logout",
-                        color = Color.Red,
-                        fontSize = 14.sp,
+                        text = "ShopMind",
+                        color = indigo600,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    TextButton(
+                        onClick = {
+                            viewModel.logout()
+                        },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Logout",
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                CategoryList(
+                    categories = uiState.categories,
+                    selectedCategory = uiState.selectedCategory,
+                    onCategorySelected = { viewModel.selectCategory(it) }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = if (uiState.selectedCategory == "All") "All Campus Gear" else "${uiState.selectedCategory} Gear",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (uiState.isLoading && uiState.products.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = indigo600)
+                    }
+                } else {
+                    ProductGrid(
+                        products = uiState.products,
+                        cart = uiState.cart,
+                        onAdd = { viewModel.addToCart(it.id) },
+                        onRemove = { viewModel.removeFromCart(it.id) }
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            CategoryList(
-                categories = uiState.categories,
-                selectedCategory = uiState.selectedCategory,
-                onCategorySelected = { viewModel.selectCategory(it) }
+        // Overlays for Purchase Stages
+        if (uiState.purchaseStage == PurchaseStage.CONFIRMATION) {
+            ConfirmPurchaseSheet(
+                paddingValues = paddingValues,
+                cart = uiState.cart,
+                products = uiState.products,
+                totalPrice = uiState.totalPrice,
+                onConfirm = { viewModel.confirmPurchase() },
+                onDismiss = { viewModel.cancelPurchaseFlow() }
             )
+        }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = if (uiState.selectedCategory == "All") "All Campus Gear" else "${uiState.selectedCategory} Gear",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+        if (uiState.purchaseStage == PurchaseStage.SUCCESS) {
+            PurchaseSuccessDialog(
+                onBackToStore = { viewModel.completePurchaseFlow() }
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (uiState.isLoading && uiState.products.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = indigo600)
-                }
-            } else {
-                ProductGrid(
-                    products = uiState.products,
-                    cart = uiState.cart,
-                    onAdd = { viewModel.addToCart(it.id) },
-                    onRemove = { viewModel.removeFromCart(it.id) }
-                )
-            }
         }
     }
 }
@@ -346,6 +369,211 @@ fun PurchaseBottomBar(
                         .padding(horizontal = 8.dp)
                 ) {
                     Text(text = "Purchase", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConfirmPurchaseSheet(
+    paddingValues: PaddingValues,
+    cart: Map<Int, Int>,
+    products: List<ProductDto>,
+    totalPrice: Double,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = false, onClick = {}),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                // Drag Handle
+                Box(
+                    modifier = Modifier
+                        .size(width = 40.dp, height = 4.dp)
+                        .background(Color(0xFFCCCCCC), CircleShape)
+                        .align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Confirm Purchase",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Cart Items list
+                cart.entries.forEach { entry ->
+                    val product = products.find { it.id == entry.key }
+                    if (product != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${entry.value}x ${product.title}",
+                                fontSize = 15.sp,
+                                color = Color.DarkGray
+                            )
+                            Text(
+                                text = "$${
+                                    String.format(
+                                        Locale.US,
+                                        "%.2f",
+                                        product.price * entry.value
+                                    )
+                                }",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Total Price",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", totalPrice)}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = indigo600
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = indigo600)
+                ) {
+                    Text(
+                        text = "Confirm Purchase",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PurchaseSuccessDialog(
+    onBackToStore: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(32.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Success Checkmark Circle
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(Color(0xFFEEF2FF), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Success",
+                        tint = indigo600,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Purchase Successful",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Your pickup code is ready on the campus dashboard.",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = onBackToStore,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = indigo600)
+                ) {
+                    Text(
+                        text = "Back to Store",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }

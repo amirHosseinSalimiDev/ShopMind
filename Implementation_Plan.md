@@ -329,7 +329,7 @@ LiteRT
 This keeps the **remote API model separate from the local database model** and prevents the Room schema from being unnecessarily coupled to DummyJSON's response structure.
 
 
-# Phase 3 — Product Data Preparation
+# Phase 3 — Product Data Preparation (Done)
 
 Fetch products from DummyJSON and store the required product information in Room.
 
@@ -360,7 +360,7 @@ rating = 2.56
 
 ---
 
-# Phase 4 — Purchase History
+# Phase 4 — Purchase History (Done)
 
 After a successful checkout:
 
