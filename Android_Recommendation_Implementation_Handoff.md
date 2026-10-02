@@ -47,13 +47,13 @@ Create a pure Kotlin class that takes ProductEntity and FeatureMetadata and retu
 
 Provide purchase items together with their resolved products and quantities. Compute a weighted mean of the 229-element product vectors using ln(1 + quantity), then L2-normalize the result. If a product cannot be found in Room, ignore it according to a documented policy. Do not use unitPrice or purchase date as model weights.
 
-### Step 5 — Integrate Room and filter completed orders
+### Step 5 — Integrate Room and filter completed orders [DONE]
 
 Extend the DAOs to return items belonging to completed orders for a given user. The query must filter by orders.userId = userId and orders.status = 'COMPLETED'. Resolve the purchased products through ProductDao.
 
 Note: the current getPurchaseHistory() and getPurchasedProducts() queries do not filter by status. Do not use them without correcting that behavior. Work with the existing schema; change the database version or add a migration only if truly required.
 
-### Step 6 — Implement LiteRTRecommendationEngine
+### Step 6 — Implement LiteRTRecommendationEngine [DONE]
 
 Create a wrapper separate from the UI. Load the model from assets and manage the interpreter with a clear, closable lifecycle. Validate tensor shapes and types at runtime, and run each input as a batch with shape [1, 458]. Copy the user vector at offset 0 and the product vector at offset 229. Control concurrent access and close the interpreter at the appropriate time. Use the API supported by this project's configured dependency.
 

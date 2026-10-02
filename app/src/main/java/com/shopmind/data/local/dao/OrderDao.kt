@@ -19,6 +19,9 @@ interface OrderDao {
     @Query("SELECT * FROM orders WHERE userId = :userId")
     fun getOrdersForUser(userId: Long): Flow<List<OrderEntity>>
 
+    @Query("SELECT * FROM orders WHERE userId = :userId AND UPPER(status) = 'COMPLETED'")
+    suspend fun getCompletedOrdersForUser(userId: Long): List<OrderEntity>
+
     @Query("SELECT * FROM order_items WHERE orderId = :orderId")
     suspend fun getItemsForOrder(orderId: Long): List<OrderItemEntity>
 }
