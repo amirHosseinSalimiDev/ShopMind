@@ -14,6 +14,7 @@ androidx-navigation = "2.10.1"
 lifecycle = "2.11.0"
 koin = "4.0.2"
 ksp = "2.3.10"
+litert = "2.2.0"
 room = "2.8.5"
 kotlinx-serialization = "1.8.0"
 retrofit-version = "3.0.0"
@@ -47,6 +48,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit-version" }
 retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit-version" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp-version" }

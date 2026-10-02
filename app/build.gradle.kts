@@ -65,6 +65,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
+    // LiteRt
+    implementation(libs.litert)
+
     // Coil
     implementation(libs.coil.compose)
 
