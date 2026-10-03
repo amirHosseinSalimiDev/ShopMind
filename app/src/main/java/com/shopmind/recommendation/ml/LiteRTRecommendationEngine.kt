@@ -11,8 +11,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
-class LiteRTRecommendationEngine(
-    private val interpreter: Interpreter
+open class LiteRTRecommendationEngine(
+    private val interpreter: Interpreter? = null,
+    private val batchPredictor: (suspend (userProfile: FloatArray, candidateProducts: List<FloatArray>) -> FloatArray)? = null
 ) : Closeable {
 
     private val mutex = Mutex()
@@ -20,7 +21,7 @@ class LiteRTRecommendationEngine(
     private var isClosed = false
 
     init {
-        validateInterpreter(interpreter)
+        interpreter?.let { validateInterpreter(it) }
     }
 
     private fun validateInterpreter(interp: Interpreter) {
@@ -42,28 +43,20 @@ class LiteRTRecommendationEngine(
         }
     }
 
-    suspend fun predictRelevanceScore(userProfile: FloatArray, candidateProduct: FloatArray): Float {
-        require(userProfile.size == 229) { "User profile must have 229 elements" }
-        require(candidateProduct.size == 229) { "Candidate product vector must have 229 elements" }
-
-        val input = FloatArray(458)
-        userProfile.copyInto(input, destinationOffset = 0)
-        candidateProduct.copyInto(input, destinationOffset = 229)
-
-        val inputBatch = arrayOf(input)
-        val outputBatch = arrayOf(floatArrayOf(0f))
-
-        mutex.withLock {
-            check(!isClosed) { "LiteRTRecommendationEngine is closed" }
-            interpreter.run(inputBatch, outputBatch)
-        }
-
-        return outputBatch[0][0]
+    open suspend fun predictRelevanceScore(userProfile: FloatArray, candidateProduct: FloatArray): Float {
+        val scores = predictBatch(userProfile, listOf(candidateProduct))
+        return scores.firstOrNull() ?: 0f
     }
 
-    suspend fun predictBatch(userProfile: FloatArray, candidateProducts: List<FloatArray>): FloatArray {
+    open suspend fun predictBatch(userProfile: FloatArray, candidateProducts: List<FloatArray>): FloatArray {
         require(userProfile.size == 229) { "User profile must have 229 elements" }
         if (candidateProducts.isEmpty()) return floatArrayOf()
+
+        batchPredictor?.let { predictor ->
+            return predictor(userProfile, candidateProducts)
+        }
+
+        val activeInterpreter = interpreter ?: error("No active LiteRT interpreter or predictor provided")
 
         val scores = FloatArray(candidateProducts.size)
 
@@ -80,7 +73,7 @@ class LiteRTRecommendationEngine(
                 val inputBatch = arrayOf(input)
                 val outputBatch = arrayOf(floatArrayOf(0f))
 
-                interpreter.run(inputBatch, outputBatch)
+                activeInterpreter.run(inputBatch, outputBatch)
                 scores[i] = outputBatch[0][0]
             }
         }
@@ -92,7 +85,7 @@ class LiteRTRecommendationEngine(
         synchronized(this) {
             if (!isClosed) {
                 isClosed = true
-                interpreter.close()
+                interpreter?.close()
             }
         }
     }
@@ -102,13 +95,13 @@ class LiteRTRecommendationEngine(
             val byteBuffer = loadModelBuffer(context, modelFileName)
             val options = Interpreter.Options()
             val interpreter = Interpreter(byteBuffer, options)
-            return LiteRTRecommendationEngine(interpreter)
+            return LiteRTRecommendationEngine(interpreter = interpreter)
         }
 
         fun createFromBuffer(byteBuffer: ByteBuffer): LiteRTRecommendationEngine {
             val options = Interpreter.Options()
             val interpreter = Interpreter(byteBuffer, options)
-            return LiteRTRecommendationEngine(interpreter)
+            return LiteRTRecommendationEngine(interpreter = interpreter)
         }
 
         private fun loadModelBuffer(context: Context, modelFileName: String): ByteBuffer {
@@ -119,7 +112,7 @@ class LiteRTRecommendationEngine(
                 val startOffset = fileDescriptor.startOffset
                 val declaredLength = fileDescriptor.declaredLength
                 fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 val bytes = context.assets.open(modelFileName).readBytes()
                 val buffer = ByteBuffer.allocateDirect(bytes.size)
                 buffer.order(ByteOrder.nativeOrder())
