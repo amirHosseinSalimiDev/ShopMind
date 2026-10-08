@@ -98,7 +98,6 @@ fun MainScreen(
                 ),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
             ) {
                 // Header (App Title & Logout)
                 item(span = { GridItemSpan(maxLineSpan) }) {

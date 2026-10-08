@@ -14,7 +14,7 @@ androidx-navigation = "2.10.1"
 lifecycle = "2.11.0"
 koin = "4.0.2"
 ksp = "2.3.10"
-litert = "2.2.0"
+litert = "2.3.0"
 room = "2.8.5"
 kotlinx-serialization = "1.8.0"
 retrofit-version = "3.0.0"
@@ -36,7 +36,7 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended-android" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
