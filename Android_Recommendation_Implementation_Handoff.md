@@ -69,11 +69,11 @@ For a new user: do not create a profile or run personalized LiteRT inference. Se
 
 Register metadata, encoder, profile builder, engine, and repository in the existing Koin setup. The ViewModel should call the repository and publish UI state. The UI should receive products and the result type only; it should not know about feature indices or tensors. Do not request recommendations when there is no current user.
 
-### Step 9 — Compare Android output with Python
+### Step 9 — Compare Android output with Python [DONE]
 
 Before final UI integration, add unit tests for metadata parsing, numeric preprocessing, product vectors, and user profiles. Use identical input fixtures in Python and Android, including reference user 10026 if the matching data is available. Compare vectors with a small floating-point tolerance. Verify the model input has length 458 and the correct order, then compare the score for the same user/product pair against Python. Also check behavior for non-completed orders, zero stock, previously purchased products, and users with no purchases.
 
-### Step 10 — Run on a physical device and measure performance
+### Step 10 — Run on a physical device and measure performance [DONE]
 
 After the Python comparison passes, run the app on an Android device. Verify asset loading and inference, then measure latency and memory use. Report any remaining differences from Python.
 

@@ -96,6 +96,22 @@ class RecommendationRepositoryTest {
         assertEquals(2, result.products[0].id)
         assertEquals(4, result.products[1].id)
     }
+
+    @Test
+    fun testCandidateFilteringExcludesPurchasedAndOutOfStock() = runBlocking {
+        val fakeProductDao = FakeProductDao(
+            products = sampleProducts,
+            purchases = listOf(PurchaseHistoryItem(productId = 1, quantity = 1, unitPrice = 10.0, createdAt = 1000L))
+        )
+
+        val candidates = fakeProductDao.getCandidateProductsForUser(userId = 10026L)
+
+        // Product 1 is purchased -> excluded
+        // Product 3 has stock = 0 -> excluded
+        // Candidates should be Products 2 and 4
+        assertEquals(2, candidates.size)
+        assertEquals(listOf(2, 4), candidates.map { it.id })
+    }
 }
 
 private class FakeProductDao(

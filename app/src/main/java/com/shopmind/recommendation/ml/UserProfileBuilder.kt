@@ -29,7 +29,7 @@ class UserProfileBuilder(
         for (item in validItems) {
             val product = item.product ?: continue
             val vector = encoder.encode(product)
-            val qty = max(item.quantity.toDouble(), 1.0)
+            val qty = max(item.quantity.toDouble(), 0.0)
             val weight = ln1p(qty)
 
             for (i in 0 until featureDim) {

@@ -146,4 +146,72 @@ class RecommendationMlTest {
         val norm = sqrt(sumSquares)
         assertEquals("L2 norm of profile must be 1.0", 1.0, norm, 0.001)
     }
+
+    @Test
+    fun testNumericPreprocessingExactFormula() {
+        val testProduct = ProductEntity(
+            id = 10,
+            category = "beauty",
+            brand = "apple",
+            tags = emptyList(),
+            price = 9.99,
+            discountPercentage = 10.0,
+            rating = 4.5,
+            title = "Test Numeric",
+            description = "",
+            images = emptyList(),
+            thumbnail = "",
+            stock = 5,
+            availabilityStatus = "In Stock"
+        )
+
+        val vector = encoder.encode(testProduct)
+        val priceIndex = metadata.featureNameToIndex["price"]!!
+        val ratingIndex = metadata.featureNameToIndex["rating"]!!
+        val discountIndex = metadata.featureNameToIndex["discount"]!!
+
+        // Price: log1p(9.99) = ln(10.99) = ~2.3970
+        // (2.3970 - 0.5822156) / (10.5186996 - 0.5822156) = ~0.18263
+        val expectedPriceNorm = (kotlin.math.ln(1.0 + 9.99).toFloat() - 0.5822156f) / (10.5186996f - 0.5822156f)
+        assertEquals(expectedPriceNorm, vector[priceIndex], 0.001f)
+
+        // Rating: (4.5 - 2.5099999) / (4.9899998 - 2.5099999) = ~0.80242
+        val expectedRatingNorm = (4.5f - 2.5099999f) / (4.9899998f - 2.5099999f)
+        assertEquals(expectedRatingNorm, vector[ratingIndex], 0.001f)
+
+        // Discount: (10.0 - 0.04) / (19.61 - 0.04) = ~0.50894
+        val expectedDiscountNorm = (10.0f - 0.04f) / (19.61f - 0.04f)
+        assertEquals(expectedDiscountNorm, vector[discountIndex], 0.001f)
+    }
+
+    @Test
+    fun testModelInputConcatenationAndOrder() {
+        val userProfile = FloatArray(229) { index -> index.toFloat() }
+        val candidateProduct = FloatArray(229) { index -> (1000 + index).toFloat() }
+
+        val modelInput = FloatArray(458)
+        System.arraycopy(userProfile, 0, modelInput, 0, 229)
+        System.arraycopy(candidateProduct, 0, modelInput, 229, 229)
+
+        assertEquals(458, modelInput.size)
+
+        // Verify userProfile is in 0..228
+        for (i in 0 until 229) {
+            assertEquals(i.toFloat(), modelInput[i], 0.0001f)
+        }
+
+        // Verify candidateProduct is in 229..457
+        for (i in 0 until 229) {
+            assertEquals((1000 + i).toFloat(), modelInput[229 + i], 0.0001f)
+        }
+    }
+
+    @Test
+    fun testZeroVectorUserProfileHandling() {
+        val emptyItems = emptyList<PurchasedItem>()
+        assertNull("Empty purchase list must return null profile", profileBuilder.buildProfile(emptyItems))
+
+        val zeroQuantityItems = listOf(PurchasedItem(ProductEntity(1, "beauty", "apple", emptyList(), 10.0, 0.0, 4.0, "P", "", emptyList(), "", 5, ""), quantity = 0))
+        assertNull("Zero quantity purchase list must return null profile", profileBuilder.buildProfile(zeroQuantityItems))
+    }
 }
