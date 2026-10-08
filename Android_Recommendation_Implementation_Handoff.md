@@ -65,7 +65,7 @@ For a user with purchases: current user ID → items from COMPLETED orders → p
 
 For a new user: do not create a profile or run personalized LiteRT inference. Select a non-personalized fallback only from available products, for example products with higher ratings. Obtain the user ID from the app's existing session or DataStore; do not use a hard-coded ID or a list shared across users.
 
-### Step 8 — Wire dependency injection, ViewModel, and Compose
+### Step 8 — Wire dependency injection, ViewModel, and Compose [DONE]
 
 Register metadata, encoder, profile builder, engine, and repository in the existing Koin setup. The ViewModel should call the repository and publish UI state. The UI should receive products and the result type only; it should not know about feature indices or tensors. Do not request recommendations when there is no current user.
 

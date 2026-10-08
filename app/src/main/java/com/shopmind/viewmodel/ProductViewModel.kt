@@ -2,14 +2,18 @@ package com.shopmind.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shopmind.data.local.entity.ProductEntity
 import com.shopmind.data.remote.dto.ProductDto
 import com.shopmind.data.repository.AuthRepository
 import com.shopmind.data.repository.OrderRepository
 import com.shopmind.data.repository.ProductRepository
+import com.shopmind.recommendation.data.RecommendationRepository
+import com.shopmind.recommendation.data.RecommendationType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 enum class PurchaseStage {
@@ -23,20 +27,26 @@ data class ProductUiState(
     val cart: Map<Int, Int> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val purchaseStage: PurchaseStage = PurchaseStage.STORE
+    val purchaseStage: PurchaseStage = PurchaseStage.STORE,
+    val recommendations: List<ProductEntity> = emptyList(),
+    val recommendationType: RecommendationType? = null,
+    val isRecommendationsLoading: Boolean = false
 ) {
     val totalItems: Int get() = cart.values.sum()
     val totalPrice: Double
         get() = cart.entries.sumOf { entry ->
-            val product = products.find { it.id == entry.key }
-            (product?.price ?: 0.0) * entry.value
+            val price = products.find { it.id == entry.key }?.price
+                ?: recommendations.find { it.id == entry.key }?.price
+                ?: 0.0
+            price * entry.value
         }
 }
 
 class ProductViewModel(
     private val productRepository: ProductRepository,
     private val authRepository: AuthRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val recommendationRepository: RecommendationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductUiState())
@@ -44,6 +54,7 @@ class ProductViewModel(
 
     init {
         loadInitialData()
+        observeUserAndLoadRecommendations()
     }
 
     private fun loadInitialData() {
@@ -63,6 +74,53 @@ class ProductViewModel(
             }
 
             loadProducts("All")
+        }
+    }
+
+    private fun observeUserAndLoadRecommendations() {
+        viewModelScope.launch {
+            authRepository.userId.collect { userId ->
+                if (userId != null && userId > 0L) {
+                    loadRecommendationsForUser(userId)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        recommendations = emptyList(),
+                        recommendationType = null,
+                        isRecommendationsLoading = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadRecommendations() {
+        viewModelScope.launch {
+            val userId = authRepository.userId.firstOrNull()
+            if (userId != null && userId > 0L) {
+                loadRecommendationsForUser(userId)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    recommendations = emptyList(),
+                    recommendationType = null,
+                    isRecommendationsLoading = false
+                )
+            }
+        }
+    }
+
+    private suspend fun loadRecommendationsForUser(userId: Long) {
+        _uiState.value = _uiState.value.copy(isRecommendationsLoading = true)
+        try {
+            val result = recommendationRepository.getRecommendationsForUser(userId)
+            _uiState.value = _uiState.value.copy(
+                recommendations = result.products,
+                recommendationType = result.type,
+                isRecommendationsLoading = false
+            )
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(
+                isRecommendationsLoading = false
+            )
         }
     }
 
@@ -136,10 +194,12 @@ class ProductViewModel(
                 if (userId != null) {
                     val currentCart = _uiState.value.cart
                     val productList = _uiState.value.products
+                    val recList = _uiState.value.recommendations
                     val items = currentCart.mapNotNull { entry ->
-                        val product = productList.find { it.id == entry.key }
-                        if (product != null) {
-                            entry.key to (entry.value to product.price)
+                        val price = productList.find { it.id == entry.key }?.price
+                            ?: recList.find { it.id == entry.key }?.price
+                        if (price != null) {
+                            entry.key to (entry.value to price)
                         } else null
                     }
 
@@ -150,6 +210,7 @@ class ProductViewModel(
                             isLoading = false,
                             purchaseStage = PurchaseStage.SUCCESS
                         )
+                        loadRecommendations()
                     }.onFailure { error ->
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,

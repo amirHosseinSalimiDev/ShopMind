@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -55,7 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.shopmind.data.local.entity.ProductEntity
 import com.shopmind.data.remote.dto.ProductDto
+import com.shopmind.recommendation.data.RecommendationType
 import com.shopmind.ui.theme.indigo600
 import com.shopmind.viewmodel.ProductViewModel
 import com.shopmind.viewmodel.PurchaseStage
@@ -126,7 +129,19 @@ fun MainScreen(
                     onCategorySelected = { viewModel.selectCategory(it) }
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                RecommendationSection(
+                    recommendations = uiState.recommendations,
+                    recommendationType = uiState.recommendationType,
+                    cart = uiState.cart,
+                    onAdd = { viewModel.addToCart(it) },
+                    onRemove = { viewModel.removeFromCart(it) }
+                )
+
+                if (uiState.recommendations.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
 
                 Text(
                     text = if (uiState.selectedCategory == "All") "All Campus Gear" else "${uiState.selectedCategory} Gear",
@@ -158,6 +173,7 @@ fun MainScreen(
                 paddingValues = paddingValues,
                 cart = uiState.cart,
                 products = uiState.products,
+                recommendations = uiState.recommendations,
                 totalPrice = uiState.totalPrice,
                 onConfirm = { viewModel.confirmPurchase() },
                 onDismiss = { viewModel.cancelPurchaseFlow() }
@@ -168,6 +184,163 @@ fun MainScreen(
             PurchaseSuccessDialog(
                 onBackToStore = { viewModel.completePurchaseFlow() }
             )
+        }
+    }
+}
+
+@Composable
+fun RecommendationSection(
+    recommendations: List<ProductEntity>,
+    recommendationType: RecommendationType?,
+    cart: Map<Int, Int>,
+    onAdd: (Int) -> Unit,
+    onRemove: (Int) -> Unit
+) {
+    if (recommendations.isEmpty()) return
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Recommended for You",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (recommendationType != null) {
+                val label = if (recommendationType == RecommendationType.PERSONALIZED) "Personalized" else "Popular"
+                val bgColor = if (recommendationType == RecommendationType.PERSONALIZED) Color(0xFFEEF2FF) else Color(0xFFFEF3C7)
+                val textColor = if (recommendationType == RecommendationType.PERSONALIZED) indigo600 else Color(0xFFD97706)
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = bgColor
+                ) {
+                    Text(
+                        text = label,
+                        color = textColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 8.dp)
+        ) {
+            items(recommendations) { product ->
+                RecommendationCard(
+                    product = product,
+                    quantity = cart.getOrDefault(product.id, 0),
+                    onAdd = { onAdd(product.id) },
+                    onRemove = { onRemove(product.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecommendationCard(
+    product: ProductEntity,
+    quantity: Int,
+    onAdd: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.width(160.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF0F0F0))
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            AsyncImage(
+                model = product.thumbnail,
+                contentDescription = product.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF5F5F5)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = product.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = "$${String.format(Locale.US, "%.2f", product.price)}",
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (quantity == 0) {
+                IconButton(
+                    onClick = onAdd,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(32.dp)
+                        .background(Color(0xFFEEF2FF), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = indigo600,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF9FAFB), RoundedCornerShape(16.dp))
+                        .padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = "Remove",
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    IconButton(
+                        onClick = onAdd,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(indigo600, CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add More",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -380,6 +553,7 @@ fun ConfirmPurchaseSheet(
     paddingValues: PaddingValues,
     cart: Map<Int, Int>,
     products: List<ProductDto>,
+    recommendations: List<ProductEntity>,
     totalPrice: Double,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -426,8 +600,11 @@ fun ConfirmPurchaseSheet(
 
                 // Cart Items list
                 cart.entries.forEach { entry ->
-                    val product = products.find { it.id == entry.key }
-                    if (product != null) {
+                    val title = products.find { it.id == entry.key }?.title
+                        ?: recommendations.find { it.id == entry.key }?.title
+                    val price = products.find { it.id == entry.key }?.price
+                        ?: recommendations.find { it.id == entry.key }?.price
+                    if (title != null && price != null) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -436,7 +613,7 @@ fun ConfirmPurchaseSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${entry.value}x ${product.title}",
+                                text = "${entry.value}x $title",
                                 fontSize = 15.sp,
                                 color = Color.DarkGray
                             )
@@ -445,7 +622,7 @@ fun ConfirmPurchaseSheet(
                                     String.format(
                                         Locale.US,
                                         "%.2f",
-                                        product.price * entry.value
+                                        price * entry.value
                                     )
                                 }",
                                 fontSize = 15.sp,

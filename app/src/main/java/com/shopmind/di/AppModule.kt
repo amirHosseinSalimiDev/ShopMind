@@ -7,6 +7,12 @@ import com.shopmind.data.remote.api.ProductApiService
 import com.shopmind.data.repository.AuthRepository
 import com.shopmind.data.repository.OrderRepository
 import com.shopmind.data.repository.ProductRepository
+import com.shopmind.recommendation.data.RecommendationRepository
+import com.shopmind.recommendation.data.RecommendationRepositoryImpl
+import com.shopmind.recommendation.ml.FeatureMetadata
+import com.shopmind.recommendation.ml.LiteRTRecommendationEngine
+import com.shopmind.recommendation.ml.ProductFeatureEncoder
+import com.shopmind.recommendation.ml.UserProfileBuilder
 import com.shopmind.viewmodel.AuthViewModel
 import com.shopmind.viewmodel.MainViewModel
 import com.shopmind.viewmodel.ProductViewModel
@@ -72,7 +78,22 @@ val appModule = module {
     single { ProductRepository(get(), get()) }
     single { OrderRepository(get()) }
 
+    // Recommendation ML Components & Repository
+    single { FeatureMetadata.loadFromAssets(androidContext()) }
+    single { ProductFeatureEncoder(get()) }
+    single { UserProfileBuilder(get()) }
+    single { LiteRTRecommendationEngine.create(androidContext()) }
+    single<RecommendationRepository> {
+        RecommendationRepositoryImpl(
+            productDao = get(),
+            userDataStore = get(),
+            encoder = get(),
+            profileBuilder = get(),
+            engine = get()
+        )
+    }
+
     viewModel { MainViewModel(get()) }
     viewModel { AuthViewModel(get()) }
-    viewModel { ProductViewModel(get(), get(), get()) }
+    viewModel { ProductViewModel(get(), get(), get(), get()) }
 }
