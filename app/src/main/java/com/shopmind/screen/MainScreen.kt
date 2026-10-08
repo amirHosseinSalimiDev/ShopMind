@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -85,84 +86,105 @@ fun MainScreen(
                 )
             }
         ) { innerPadding ->
-            Column(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(
+                    top = 16.dp,
+                    bottom = 24.dp,
+                    start = 20.dp,
+                    end = 20.dp
+                ),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 20.dp)
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ShopMind",
-                        color = indigo600,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    TextButton(
-                        onClick = {
-                            viewModel.logout()
-                        },
-                        contentPadding = PaddingValues(0.dp)
+                // Header (App Title & Logout)
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Logout",
-                            color = Color.Red,
-                            fontSize = 14.sp,
+                            text = "ShopMind",
+                            color = indigo600,
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        TextButton(
+                            onClick = { viewModel.logout() },
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                text = "Logout",
+                                color = Color.Red,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Category List
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    CategoryList(
+                        categories = uiState.categories,
+                        selectedCategory = uiState.selectedCategory,
+                        onCategorySelected = { viewModel.selectCategory(it) }
+                    )
+                }
+
+                // Recommendations Section
+                if (uiState.recommendations.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        RecommendationSection(
+                            recommendations = uiState.recommendations,
+                            recommendationType = uiState.recommendationType,
+                            cart = uiState.cart,
+                            onAdd = { viewModel.addToCart(it) },
+                            onRemove = { viewModel.removeFromCart(it) }
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                CategoryList(
-                    categories = uiState.categories,
-                    selectedCategory = uiState.selectedCategory,
-                    onCategorySelected = { viewModel.selectCategory(it) }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                RecommendationSection(
-                    recommendations = uiState.recommendations,
-                    recommendationType = uiState.recommendationType,
-                    cart = uiState.cart,
-                    onAdd = { viewModel.addToCart(it) },
-                    onRemove = { viewModel.removeFromCart(it) }
-                )
-
-                if (uiState.recommendations.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(20.dp))
+                // Products Title
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        text = if (uiState.selectedCategory == "All") "All Products" else "${uiState.selectedCategory} Products",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                 }
 
-                Text(
-                    text = if (uiState.selectedCategory == "All") "All Campus Gear" else "${uiState.selectedCategory} Gear",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+                // Products Grid or Loading State
                 if (uiState.isLoading && uiState.products.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = indigo600)
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = indigo600)
+                        }
                     }
                 } else {
-                    ProductGrid(
-                        products = uiState.products,
-                        cart = uiState.cart,
-                        onAdd = { viewModel.addToCart(it.id) },
-                        onRemove = { viewModel.removeFromCart(it.id) }
-                    )
+                    items(
+                        items = uiState.products,
+                        key = { it.id }
+                    ) { product ->
+                        ProductCard(
+                            product = product,
+                            quantity = uiState.cart.getOrDefault(product.id, 0),
+                            onAdd = { viewModel.addToCart(product.id) },
+                            onRemove = { viewModel.removeFromCart(product.id) }
+                        )
+                    }
                 }
             }
         }
@@ -238,7 +260,10 @@ fun RecommendationSection(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 8.dp)
         ) {
-            items(recommendations) { product ->
+            items(
+                items = recommendations,
+                key = { it.id }
+            ) { product ->
                 RecommendationCard(
                     product = product,
                     quantity = cart.getOrDefault(product.id, 0),
@@ -373,30 +398,6 @@ fun CategoryList(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun ProductGrid(
-    products: List<ProductDto>,
-    cart: Map<Int, Int>,
-    onAdd: (ProductDto) -> Unit,
-    onRemove: (ProductDto) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        items(products) { product ->
-            ProductCard(
-                product = product,
-                quantity = cart.getOrDefault(product.id, 0),
-                onAdd = { onAdd(product) },
-                onRemove = { onRemove(product) }
-            )
         }
     }
 }
