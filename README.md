@@ -1,62 +1,79 @@
 # ShopMind 🛍️
 
-**ShopMind** is an Android e-commerce application built with **Kotlin and Jetpack Compose**, featuring a modern shopping experience and an experimental on-device product recommendation system powered by machine learning.
+**ShopMind** is a native Android e-commerce application built with **Kotlin and Jetpack Compose**, providing a complete shopping experience with an integrated **on-device machine learning recommendation system**.
 
-The project explores how machine learning can be integrated into an Android application to provide personalized product recommendations based on users' purchase history.
+The application combines modern Android development practices with local data management, REST API integration, and machine learning to deliver personalized product recommendations directly on users' devices.
+
+ShopMind has been completed and a working application release is available.
 
 ## ✨ Features
 
 - **Authentication:** User registration and login.
-- **Product Catalog:** Browse products with detailed information.
+- **Product Catalog:** Browse and discover products.
 - **Categories:** Explore products by category.
-- **Search:** Search and discover products.
+- **Search:** Search for products.
 - **Product Details:** View product descriptions, prices, ratings, and images.
 - **Favorites:** Save products for later.
 - **Shopping Cart:** Add, remove, and manage cart items.
 - **Checkout:** Complete the shopping process.
 - **Order History:** Review previous purchases.
-- **Profile & Settings:** Manage user profile and application preferences.
-- **Product Recommendations:** Personalized product recommendations based on purchase history (ML implementation in progress).
+- **Profile & Settings:** Manage user information and application preferences.
+- **Personalized Recommendations:** Discover relevant products using an on-device ML model.
 
-## 🧠 Recommendation System
+## 🧠 On-Device Recommendation System
 
-One of the main objectives of ShopMind is exploring **on-device machine learning for personalized product recommendations**.
+One of the core features of ShopMind is its machine learning-based product recommendation system.
 
-The recommendation system is designed to run locally on Android devices using LiteRT, reducing the need for a dedicated recommendation backend.
+Unlike recommendation systems that rely on remote inference services, ShopMind performs recommendation inference directly on the Android device using **LiteRT**.
 
-### Current Approach
+### Recommendation Approach
 
-The system uses purchase history as its primary source of user preferences.
+The system uses users' purchase history to build personalized recommendations.
 
-- Product features are extracted from categories, brands, tags, prices, ratings, and discounts.
-- User profiles are constructed from previously purchased products.
-- Candidate products are scored and ranked to generate personalized recommendations.
-- New users without purchase history are handled through a non-personalized fallback strategy.
+The recommendation pipeline consists of:
+
+1. **Product Feature Engineering:** Extracting product features from categories, brands, tags, prices, ratings, and discounts.
+2. **Purchase History Processing:** Collecting completed purchase interactions from the local database.
+3. **User Profile Construction:** Building user preference vectors from previously purchased products.
+4. **Recommendation Inference:** Using a trained machine learning model to calculate recommendation scores.
+5. **Product Ranking:** Ranking candidate products based on predicted scores.
 
 ### Machine Learning Pipeline
 
-The model development process uses Python and TensorFlow/Keras.
+The model was developed using Python and TensorFlow/Keras, then converted to LiteRT for on-device inference.
 
 ```text
-Product Dataset + Purchase History
+       Product Dataset
               |
               v
       Feature Engineering
               |
               v
-       User Profile Building
+       Purchase History
               |
               v
-       Recommendation Model
+      User Profile Building
               |
               v
-         LiteRT Conversion
+       Model Training
+       (TensorFlow/Keras)
               |
               v
-       Android Integration
+        LiteRT Conversion
+              |
+              v
+      Android Integration
+              |
+              v
+     On-Device Inference
+              |
+              v
+    Personalized Recommendations
 ```
 
-The current dataset contains:
+### Dataset Overview
+
+The recommendation model was developed using the following dataset:
 
 | Metric | Count |
 |---|---:|
@@ -67,43 +84,57 @@ The current dataset contains:
 | Unique Purchased Products | 60 |
 | Product Feature Dimensions | 229 |
 
-**Note:** The recommendation model is experimental. Due to the limited dataset size, model complexity and recommendation quality are being evaluated against a content-based baseline.
+### Recommendation Characteristics
+
+- Uses purchase history as the primary personalization signal.
+- Builds product representations using 229 features.
+- Performs inference locally on Android devices.
+- Does not require a remote ML inference service.
+- Handles users without purchase history through a non-personalized recommendation fallback.
 
 ## 🛠️ Tech Stack
 
 ### Android Development
 
-- **Language:** Kotlin
-- **UI:** Jetpack Compose
-- **Design System:** Material 3
-- **Architecture:** MVVM / Clean Architecture principles
-- **Navigation:** Navigation Compose
-- **Local Storage:** Room Database
-- **Preferences & Authentication State:** DataStore
-- **Asynchronous Programming:** Kotlin Coroutines & Flow
+| Technology | Purpose |
+|---|---|
+| Kotlin | Primary programming language |
+| Jetpack Compose | Declarative UI |
+| Material 3 | UI components and design system |
+| MVVM | Presentation architecture |
+| Clean Architecture principles | Separation of concerns |
+| Navigation Compose | Screen navigation |
+| Room | Local database |
+| DataStore | Persistent preferences |
+| Kotlin Coroutines | Asynchronous operations |
+| Kotlin Flow | Reactive data streams |
 
 ### Machine Learning
 
-- **Language:** Python
-- **ML Framework:** TensorFlow / Keras
-- **On-device Inference:** LiteRT
-- **Recommendation Approach:** Content-Based Filtering and Neural Network experimentation
+| Technology | Purpose |
+|---|---|
+| Python | ML pipeline development |
+| TensorFlow / Keras | Model development and training |
+| LiteRT | On-device model inference |
+| Feature Engineering | Product representation |
+| Content-Based Filtering | Recommendation baseline |
 
 ### Data Source
 
-- **Product API:** [DummyJSON](https://dummyjson.com/)
+- [DummyJSON](https://dummyjson.com/) — Product catalog and product information.
 
-## 🏗️ Project Structure
+## 🏗️ Architecture
 
-The Android application follows a modular and layered approach to separate UI, business logic, and data responsibilities.
+ShopMind follows a layered architecture inspired by Clean Architecture principles, separating presentation, domain, and data responsibilities.
 
-A simplified representation:
+The recommendation system is also isolated from the main shopping functionality.
+
+A simplified conceptual structure:
 
 ```text
 ShopMind/
 │
 ├── app/
-│   └── Application entry point
 │
 ├── data/
 │   ├── local/
@@ -133,12 +164,12 @@ ShopMind/
 │   └── profile/
 │
 └── recommendation/
-    ├── feature engineering
-    ├── user profiles
-    └── ML inference
+    ├── data/
+    ├── domain/
+    └── ml/
 ```
 
-*This is a conceptual overview; the actual source tree may differ.*
+*The structure above is a conceptual overview.*
 
 ## 🚀 Getting Started
 
@@ -165,38 +196,30 @@ git clone <REPOSITORY_URL>
 
 ## 📱 Screenshots
 
-<!-- Add application screenshots here -->
+<!-- Replace placeholders with actual application screenshots -->
 
-| Home | Product Details | Categories |
+| Home | Categories | Product Details |
 |:---:|:---:|:---:|
-| Coming Soon | Coming Soon | Coming Soon |
+| Add Screenshot | Add Screenshot | Add Screenshot |
 
-| Shopping Cart | Favorites | Profile |
+| Favorites | Shopping Cart | Profile |
 |:---:|:---:|:---:|
-| Coming Soon | Coming Soon | Coming Soon |
+| Add Screenshot | Add Screenshot | Add Screenshot |
 
-## 🎯 Project Goals
+| Personalized Recommendations |
+|:---:|
+| Add Recommendation Screenshot |
 
-ShopMind is designed as a practical exploration of modern Android development and machine learning integration.
+## 🎯 Project Highlights
 
-Key objectives:
-
-- Building a modern Android application using Kotlin and Jetpack Compose.
-- Applying clean architecture and separation of concerns.
-- Managing local application data with Room and DataStore.
-- Integrating remote product data through REST APIs.
-- Exploring machine learning for personalized recommendations.
-- Running recommendation inference directly on Android devices using LiteRT.
-
-## 📌 Future Improvements
-
-- Complete LiteRT model integration.
-- Improve recommendation quality and evaluation.
-- Expand the product and purchase datasets.
-- Enhance recommendation ranking.
-- Improve UI/UX and application performance.
-- Add more comprehensive unit and integration tests.
+- Developed a complete native Android shopping application.
+- Applied modern Android development practices with Kotlin and Jetpack Compose.
+- Implemented local persistence using Room and DataStore.
+- Integrated remote product data through REST APIs.
+- Developed a machine learning recommendation pipeline using Python and TensorFlow/Keras.
+- Converted and integrated the trained model using LiteRT.
+- Implemented on-device ML inference for personalized product recommendations.
 
 ## 📄 License
 
-This project was developed for educational and experimental purposes.
+This project was developed for educational purposes.
